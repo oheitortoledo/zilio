@@ -105,7 +105,12 @@
     padding:13px 16px; font-size:16px; font-family:"Montserrat",sans-serif;
     font-weight:600; outline:none; transition:border-color .15s,box-shadow .15s;
   }
-  input[type=text]::placeholder{color:var(--muted);font-weight:400}
+  input::placeholder{color:var(--muted);font-weight:400;opacity:.7}
+  .emptyhint{
+    margin-top:20px;padding-top:18px;border-top:1px solid rgba(146,111,52,.3);
+    font-family:"Sora",sans-serif;font-size:13px;color:var(--muted);display:none;
+  }
+  .emptyhint.on{display:block}
   input[type=text]:focus{border-color:var(--gold);box-shadow:0 0 0 2px rgba(204,143,78,.35)}
   .field.wide{grid-column:1/-1;padding-bottom:20px;border-bottom:1px solid rgba(146,111,52,.3)}
 
@@ -166,6 +171,15 @@
   .kpis{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px}
   .kpi{background:var(--blue-dark);border:1px solid var(--gold-deep);border-radius:8px;padding:18px 14px;text-align:center}
   .kpi .kl{font-family:"Sora",sans-serif;font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-warm)}
+  /* lucro líquido no verde quando a conta fecha positiva */
+  .kpi.kpi-ll{transition:border-color .3s,background .3s}
+  .kpi.kpi-ll.profit{border-color:var(--success);background:rgba(18,211,107,.09)}
+  .kpi.kpi-ll.profit .kl{color:var(--success)}
+  .kpi.kpi-ll.profit .kv{color:var(--success)}
+  @keyframes llpop{0%{transform:scale(1)}35%{transform:scale(1.07)}100%{transform:scale(1)}}
+  .kpi.kpi-ll.pop{animation:llpop .5s ease-out}
+  .fxcanvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:999}
+  @media(prefers-reduced-motion:reduce){.kpi.kpi-ll.pop{animation:none}}
   .kpi .kv{font-family:"Montserrat",sans-serif;font-weight:800;font-size:clamp(22px,2.2vw,31px);color:var(--gold-light);margin-top:8px;line-height:1;white-space:nowrap}
 
   /* ---------- Conclusion ---------- */
@@ -289,21 +303,22 @@
         </div>
         <div class="field">
           <label>Terreno</label>
-          <div class="input-shell"><span class="pre">R$</span><input type="number" id="terreno" class="has-pre" value="300000" step="10000"></div>
+          <div class="input-shell"><span class="pre">R$</span><input type="number" id="terreno" class="has-pre" placeholder="300000" step="10000"></div>
         </div>
         <div class="field">
           <label>Tempo de operação <span class="hint">(meses)</span></label>
-          <div class="input-shell"><input type="number" id="tempo" value="18" step="1"><span class="suf">meses</span></div>
+          <div class="input-shell"><input type="number" id="tempo" placeholder="18" step="1"><span class="suf">meses</span></div>
         </div>
         <div class="field">
           <label>Tamanho da casa <span class="hint">(m²)</span></label>
-          <div class="input-shell"><input type="number" id="area" class="has-suf" value="200" step="10"><span class="suf">m²</span></div>
+          <div class="input-shell"><input type="number" id="area" class="has-suf" placeholder="200" step="10"><span class="suf">m²</span></div>
         </div>
         <div class="field">
           <label>Custo por m²</label>
-          <div class="input-shell"><span class="pre">R$</span><input type="number" id="rm2" class="has-pre" value="3500" step="100"></div>
+          <div class="input-shell"><span class="pre">R$</span><input type="number" id="rm2" class="has-pre" placeholder="3500" step="100"></div>
         </div>
       </div>
+      <div class="emptyhint" id="emptyhint">Preencha os quatro campos acima para a conta rodar.</div>
     </div>
 
     <div class="cards">
@@ -315,7 +330,7 @@
         <div class="sub" style="margin:6px 0 0;font-size:14px">Capital 100% seu. Sem financiamento.</div>
         <div class="kpis">
           <div class="kpi"><div class="kl">Capital investido</div><div class="kv" id="c_cap"></div></div>
-          <div class="kpi"><div class="kl">Lucro líquido</div><div class="kv" id="c_ll"></div></div>
+          <div class="kpi kpi-ll"><div class="kl">Lucro líquido</div><div class="kv" id="c_ll"></div></div>
         </div>
         <div class="rows">
           <div class="row"><span class="k">Imóvel (terreno + obra)</span><span class="v" id="c_imovel"></span></div>
@@ -335,7 +350,7 @@
         <div class="sub" style="margin:6px 0 0;font-size:14px">Financia a maior parte. Capital de giro no bolso.</div>
         <div class="kpis">
           <div class="kpi"><div class="kl">Capital investido</div><div class="kv" id="a_cap"></div></div>
-          <div class="kpi"><div class="kl">Lucro líquido</div><div class="kv" id="a_ll"></div></div>
+          <div class="kpi kpi-ll"><div class="kl">Lucro líquido</div><div class="kv" id="a_ll"></div></div>
         </div>
         <div class="rows">
           <div class="row"><span class="k">Imóvel (terreno + obra)</span><span class="v" id="a_imovel"></span></div>
@@ -532,7 +547,118 @@
   function PCT(v){return (v*100).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';}
   function PCT2(v){return (v*100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';}
 
+  // ---------- estado vazio: a página abre zerada e só calcula com os 4 campos preenchidos ----------
+  var CAMPOS = ['terreno','tempo','area','rm2'];
+  var SAIDAS = ['c_imovel','c_venda','c_comissao','c_lb','c_imp','c_roi','c_roim','c_cap','c_ll',
+                'a_imovel','a_fin','a_venda','a_comissao','a_custo','a_lb','a_imp','a_roi','a_roim','a_cap','a_ll',
+                't_obra','t_imovel','t_venda',
+                'k_cap_c','k_cap_a','k_ll_c','k_ll_a','k_roi_c','k_roi_a','k_roim_c','k_roim_a','mult',
+                'j_total','j_efet','lr_atual','lr_real'];
+
+  function preenchido(){
+    var ok = CAMPOS.every(function(id){ return $(id).value.trim() !== ''; });
+    return ok && num('tempo') > 0 && num('area') > 0 && num('rm2') > 0;
+  }
+
+  function zerar(){
+    SAIDAS.forEach(function(id){ $(id).textContent = '—'; });
+    ['j_valfin','j_terr','j_obra'].forEach(function(id){ $(id).value = ''; });
+    $('t_markup').textContent   = PCT(FIX.markup);
+    $('t_comissao').textContent = PCT(FIX.comissao);
+    $('t_imposto').textContent  = PCT(FIX.imposto);
+    $('t_fin').textContent      = PCT(FIX.fin);
+    $('t_custofin').textContent = PCT2(FIX.custofin);
+    $('rec').innerHTML = '';
+    $('congrats').classList.remove('on');
+    $('card-conv').classList.remove('win');
+    $('card-alav').classList.remove('win');
+    $('emptyhint').classList.add('on');
+    marcarLucro(false);
+    explodiu = false;
+    clearTimeout(explodeTimer);
+    calcJuros(0, 0, 0, false);
+  }
+
+  // ---------- lucro no verde + explosãozinha ----------
+  var explodiu = false, explodeTimer = null;
+
+  function marcarLucro(on){
+    var bxs = document.querySelectorAll('.kpi-ll');
+    for(var i=0;i<bxs.length;i++){ bxs[i].classList.toggle('profit', on); }
+  }
+
+  function agendarExplosao(){
+    if(explodiu) return;
+    clearTimeout(explodeTimer);
+    explodeTimer = setTimeout(function(){
+      if(explodiu || !preenchido()) return;
+      explodiu = true;
+      var bxs = document.querySelectorAll('.kpi-ll');
+      for(var i=0;i<bxs.length;i++){
+        (function(b){ b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); })(bxs[i]);
+      }
+      explodir();
+    }, 600);
+  }
+
+  function explodir(){
+    if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var alvos = document.querySelectorAll('.kpi-ll');
+    if(!alvos.length) return;
+
+    var cv = document.createElement('canvas');
+    cv.className = 'fxcanvas';
+    document.body.appendChild(cv);
+    var dpr = window.devicePixelRatio || 1;
+    var W = window.innerWidth, H = window.innerHeight;
+    cv.width = W*dpr; cv.height = H*dpr;
+    var ctx = cv.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    var cores = ['#12d36b','#12d36b','#cc8f4e','#dfbd69','#ffffff'];
+    var ps = [];
+    for(var a=0;a<alvos.length;a++){
+      var r = alvos[a].getBoundingClientRect();
+      var cx = r.left + r.width/2, cy = r.top + r.height/2;
+      for(var i=0;i<48;i++){
+        var ang = Math.random()*Math.PI*2, sp = 2 + Math.random()*7;
+        ps.push({
+          x:cx, y:cy, vx:Math.cos(ang)*sp, vy:Math.sin(ang)*sp - 3,
+          s:3 + Math.random()*5, cor:cores[(Math.random()*cores.length)|0],
+          rot:Math.random()*6.28, vr:(Math.random()-0.5)*0.35
+        });
+      }
+    }
+
+    var t0 = null, DUR = 1.7;
+    function quadro(ts){
+      if(t0 === null) t0 = ts;
+      var t = (ts - t0)/1000;
+      ctx.clearRect(0,0,W,H);
+      var alfa = 1 - t/DUR;
+      for(var i=0;i<ps.length;i++){
+        var p = ps[i];
+        p.vy += 0.2; p.vx *= 0.99;
+        p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+        if(alfa <= 0 || p.y > H + 40) continue;
+        ctx.save();
+        ctx.globalAlpha = alfa;
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = p.cor;
+        ctx.fillRect(-p.s/2, -p.s/2, p.s, p.s*0.62);
+        ctx.restore();
+      }
+      if(t < DUR) requestAnimationFrame(quadro);
+      else if(cv.parentNode) cv.parentNode.removeChild(cv);
+    }
+    requestAnimationFrame(quadro);
+  }
+
   function calc(){
+    if(!preenchido()){ zerar(); return; }
+    $('emptyhint').classList.remove('on');
+
     var terreno = num('terreno');
     var tempo   = num('tempo') || 1;
     var area    = num('area');
@@ -617,8 +743,13 @@
         ? 'Parabéns! Você pode colher um lucro de <b>'+BRL(lmin)+'</b> até <b>'+BRL(lmax)+'</b> nessa operação.'
         : 'Você pode colher um lucro de até <b>'+BRL(lmax)+'</b> nessa operação — mas um dos cenários fecha no vermelho.';
       $('congrats').classList.add('on');
+      marcarLucro(true);
+      agendarExplosao();
     } else {
       $('congrats').classList.remove('on');
+      marcarLucro(false);
+      explodiu = false;
+      clearTimeout(explodeTimer);
     }
 
     var mult = c_roi!==0 ? (a_roi/c_roi) : 0;
@@ -630,20 +761,21 @@
     $('card-conv').classList.toggle('win', !alavWins);
     $('rec').innerHTML = '✓ Cenário recomendado: <b style="color:var(--gold);margin-left:6px">'+(alavWins?'ALAVANCADO':'CONVENCIONAL')+'</b>';
 
-    calcJuros(terreno, obra, finPct);
+    calcJuros(terreno, obra, finPct, true);
   }
 
   // ---------- juros de obra ----------
-  function calcJuros(terreno, obra, finPct){
+  function calcJuros(terreno, obra, finPct, pronto){
+    if(pronto === undefined) pronto = true;
     var terrFin = terreno*finPct;
     var obraFin = obra*finPct;
     var valFin  = terrFin+obraFin;
     var anual   = num('j_anual')/100;
     var mensal  = anual/12;
 
-    $('j_valfin').value = Math.round(valFin);
-    $('j_terr').value = Math.round(terrFin);
-    $('j_obra').value = Math.round(obraFin);
+    $('j_valfin').value = pronto ? Math.round(valFin) : '';
+    $('j_terr').value = pronto ? Math.round(terrFin) : '';
+    $('j_obra').value = pronto ? Math.round(obraFin) : '';
     $('j_mensal').textContent = PCT2(mensal)+' a.m.';
 
     var body = $('jbody');
@@ -662,13 +794,13 @@
       tr.innerHTML =
         '<td><span class="etp">'+(i+1)+'</span></td>'+
         '<td><input class="pct" type="number" step="1" data-i="'+i+'" value="'+(frac*100)+'"><span style="color:var(--muted);font-size:12px;margin-left:2px">%</span></td>'+
-        '<td>'+(liberado>0?BRL(liberado):'—')+'</td>'+
-        '<td>'+BRL(acumulado)+'</td>'+
-        '<td>'+BRL2(juros)+'</td>';
+        '<td>'+(pronto && liberado>0 ? BRL(liberado) : '—')+'</td>'+
+        '<td>'+(pronto ? BRL(acumulado) : '—')+'</td>'+
+        '<td>'+(pronto ? BRL2(juros) : '—')+'</td>';
       body.appendChild(tr);
     }
-    $('j_total').textContent = BRL2(totalJuros);
-    $('j_efet').textContent = valFin>0 ? PCT2(totalJuros/valFin) : '—';
+    $('j_total').textContent = pronto ? BRL2(totalJuros) : '—';
+    $('j_efet').textContent = (pronto && valFin>0) ? PCT2(totalJuros/valFin) : '—';
 
     // sum warning
     var sw = $('sumwarn');
@@ -677,8 +809,8 @@
     else { sw.textContent='⚠ Obra liberada: '+pctSum+'% (ajuste para 100%)'; sw.className='sumwarn bad'; }
 
     // link real -> cenário
-    $('lr_real').textContent = BRL(totalJuros)+' ('+PCT2(valFin>0?totalJuros/valFin:0)+')';
-    $('lr_atual').textContent = BRL(LAST.imovel*FIX.custofin);
+    $('lr_real').textContent = pronto ? BRL(totalJuros)+' ('+PCT2(valFin>0?totalJuros/valFin:0)+')' : '—';
+    $('lr_atual').textContent = pronto ? BRL(LAST.imovel*FIX.custofin) : '—';
 
     // rebind pct inputs
     var inputs = body.querySelectorAll('input.pct');
