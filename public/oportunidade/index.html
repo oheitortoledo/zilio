@@ -106,11 +106,14 @@
     font-weight:600; outline:none; transition:border-color .15s,box-shadow .15s;
   }
   input::placeholder{color:var(--muted);font-weight:400;opacity:.7}
-  .emptyhint{
-    margin-top:20px;padding-top:18px;border-top:1px solid rgba(146,111,52,.3);
-    font-family:"Sora",sans-serif;font-size:13px;color:var(--muted);display:none;
+  .calcbar{
+    margin-top:22px;padding-top:20px;border-top:1px solid rgba(146,111,52,.3);
+    display:flex;align-items:center;gap:16px;flex-wrap:wrap;
   }
-  .emptyhint.on{display:block}
+  .btn-calc{font-size:15px;padding:13px 34px;letter-spacing:.04em}
+  .btn-calc:disabled{opacity:.45;cursor:not-allowed;background:var(--gold-deep);border-color:var(--gold-deep)}
+  .emptyhint{font-family:"Sora",sans-serif;font-size:13px;color:var(--muted);display:none}
+  .emptyhint.on{display:inline}
   input[type=text]:focus{border-color:var(--gold);box-shadow:0 0 0 2px rgba(204,143,78,.35)}
   .field.wide{grid-column:1/-1;padding-bottom:20px;border-bottom:1px solid rgba(146,111,52,.3)}
 
@@ -318,7 +321,10 @@
           <div class="input-shell"><span class="pre">R$</span><input type="number" id="rm2" class="has-pre" placeholder="3500" step="100"></div>
         </div>
       </div>
-      <div class="emptyhint" id="emptyhint">Preencha os quatro campos acima para a conta rodar.</div>
+      <div class="calcbar">
+        <button class="btn gold btn-calc" id="calcBtn">Calcular</button>
+        <span class="emptyhint" id="emptyhint">Preencha os quatro campos acima e clique em Calcular.</span>
+      </div>
     </div>
 
     <div class="cards">
@@ -572,33 +578,46 @@
     $('congrats').classList.remove('on');
     $('card-conv').classList.remove('win');
     $('card-alav').classList.remove('win');
-    $('emptyhint').classList.add('on');
     marcarLucro(false);
     explodiu = false;
-    clearTimeout(explodeTimer);
     calcJuros(0, 0, 0, false);
+    atualizarBarra();
+  }
+
+  // a conta só roda depois de clicar em Calcular
+  var calculado = false;
+
+  function atualizarBarra(){
+    var hint = $('emptyhint');
+    hint.classList.add('on');
+    hint.textContent = preenchido()
+      ? 'Clique em Calcular para ver os cenários.'
+      : 'Preencha os quatro campos acima e clique em Calcular.';
+    $('calcBtn').disabled = !preenchido();
+  }
+
+  function calcular(){
+    if(!preenchido()){ atualizarBarra(); return; }
+    calculado = true;
+    calc();
   }
 
   // ---------- lucro no verde + explosãozinha ----------
-  var explodiu = false, explodeTimer = null;
+  var explodiu = false;
 
   function marcarLucro(on){
     var bxs = document.querySelectorAll('.kpi-ll');
     for(var i=0;i<bxs.length;i++){ bxs[i].classList.toggle('profit', on); }
   }
 
-  function agendarExplosao(){
+  function comemorar(){
     if(explodiu) return;
-    clearTimeout(explodeTimer);
-    explodeTimer = setTimeout(function(){
-      if(explodiu || !preenchido()) return;
-      explodiu = true;
-      var bxs = document.querySelectorAll('.kpi-ll');
-      for(var i=0;i<bxs.length;i++){
-        (function(b){ b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); })(bxs[i]);
-      }
-      explodir();
-    }, 600);
+    explodiu = true;
+    var bxs = document.querySelectorAll('.kpi-ll');
+    for(var i=0;i<bxs.length;i++){
+      (function(b){ b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); })(bxs[i]);
+    }
+    explodir();
   }
 
   function explodir(){
@@ -656,8 +675,9 @@
   }
 
   function calc(){
-    if(!preenchido()){ zerar(); return; }
+    if(!calculado || !preenchido()){ zerar(); return; }
     $('emptyhint').classList.remove('on');
+    $('calcBtn').disabled = false;
 
     var terreno = num('terreno');
     var tempo   = num('tempo') || 1;
@@ -744,12 +764,11 @@
         : 'Você pode colher um lucro de até <b>'+BRL(lmax)+'</b> nessa operação — mas um dos cenários fecha no vermelho.';
       $('congrats').classList.add('on');
       marcarLucro(true);
-      agendarExplosao();
+      comemorar();
     } else {
       $('congrats').classList.remove('on');
       marcarLucro(false);
       explodiu = false;
-      clearTimeout(explodeTimer);
     }
 
     var mult = c_roi!==0 ? (a_roi/c_roi) : 0;
@@ -836,9 +855,13 @@
     }
   });
 
-  // recalc on any premise input
-  ['terreno','tempo','area','rm2','j_anual']
-    .forEach(function(id){ $(id).addEventListener('input', calc); });
+  // mexeu num dado da operação -> resultado sai do ar até clicar em Calcular de novo
+  ['terreno','tempo','area','rm2'].forEach(function(id){
+    $(id).addEventListener('input', function(){ calculado = false; calc(); });
+    $(id).addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); calcular(); } });
+  });
+  $('j_anual').addEventListener('input', calc);
+  $('calcBtn').addEventListener('click', calcular);
 
   calc();
 </script>
