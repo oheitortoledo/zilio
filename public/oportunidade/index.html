@@ -33,11 +33,11 @@
     font-family:"Sora",sans-serif; font-size:12px; font-weight:600;
     letter-spacing:.18em; text-transform:uppercase; color:var(--gold);
   }
-  .hero{padding:54px 0 20px}
-  .hero .badge{margin-bottom:16px}
+  .hero{padding:34px 0 12px}
+  .hero .badge{margin-bottom:12px}
   .hero h1{
     font-family:"Montserrat",-apple-system,sans-serif; font-weight:800;
-    font-size:clamp(30px,5vw,52px); line-height:1.12; letter-spacing:-.01em;
+    font-size:clamp(21px,2.5vw,30px); line-height:1.18; letter-spacing:-.01em;
   }
   .hero h1 .g{color:var(--gold-bright)}
   .hero p{color:var(--muted);font-size:19px;margin-top:16px;max-width:720px}
@@ -66,6 +66,8 @@
     background:var(--charcoal); border:1px solid var(--gold-deep);
     border-radius:10px; padding:28px; box-shadow:0 2px 20px rgba(0,0,0,.35);
   }
+  /* primeira dobra sem caixa, mais clean */
+  .panel.panel-bare{background:transparent;border:none;border-radius:0;padding:0;box-shadow:none}
   .panel-title{
     font-family:"Sora",sans-serif; font-size:12px; font-weight:600;
     letter-spacing:.14em; text-transform:uppercase; color:var(--gold);
@@ -164,6 +166,16 @@
     padding:9px 0;border-bottom:1px solid rgba(146,111,52,.18);
   }
   .row .k{color:var(--muted);font-size:14px;font-family:"Sora",sans-serif;letter-spacing:.02em}
+  /* premissa editável, entre parênteses, ao lado do nome da linha */
+  .prem{color:var(--gold-warm);font-family:"Sora",sans-serif;font-size:13px;white-space:nowrap}
+  .row input.pin{
+    width:44px;background:transparent;color:var(--gold-light);
+    border:none;border-bottom:1px dashed var(--gold-deep);border-radius:0;
+    padding:0 2px;margin:0 1px;font-family:"Montserrat",sans-serif;font-weight:700;
+    font-size:13px;text-align:center;outline:none;-moz-appearance:textfield;cursor:text;
+  }
+  .row input.pin:hover{border-bottom-color:var(--gold-warm)}
+  .row input.pin:focus{border-bottom-style:solid;border-bottom-color:var(--gold);color:var(--gold);box-shadow:none}
   .row .v{font-family:"Montserrat",sans-serif;font-weight:600;font-size:16px;white-space:nowrap}
   .row.neg .v{color:#e59a9a}
   .row.hl{border-bottom:none;margin-top:auto;padding-top:16px;border-top:1px solid var(--gold-deep)}
@@ -174,15 +186,16 @@
   .kpis{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px}
   .kpi{background:var(--blue-dark);border:1px solid var(--gold-deep);border-radius:8px;padding:18px 14px;text-align:center}
   .kpi .kl{font-family:"Sora",sans-serif;font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-warm)}
-  /* lucro líquido no verde quando a conta fecha positiva */
-  .kpi.kpi-ll{transition:border-color .3s,background .3s}
-  .kpi.kpi-ll.profit{border-color:var(--success);background:rgba(18,211,107,.09)}
-  .kpi.kpi-ll.profit .kl{color:var(--success)}
-  .kpi.kpi-ll.profit .kv{color:var(--success)}
-  @keyframes llpop{0%{transform:scale(1)}35%{transform:scale(1.07)}100%{transform:scale(1)}}
-  .kpi.kpi-ll.pop{animation:llpop .5s ease-out}
+  /* lucro líquido fecha o card e vai pro verde quando a conta é positiva */
+  .row.hl.ll-row{transition:border-color .3s}
+  .row.hl.ll-row .v{font-size:24px}
+  .row.hl.ll-row.profit{border-top-color:var(--success)}
+  .row.hl.ll-row.profit .k{color:var(--success)}
+  .row.hl.ll-row.profit .v{color:var(--success)}
+  @keyframes llpop{0%{transform:scale(1)}35%{transform:scale(1.09)}100%{transform:scale(1)}}
+  .row.hl.ll-row.pop .v{display:inline-block;transform-origin:right center;animation:llpop .5s ease-out}
   .fxcanvas{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:999}
-  @media(prefers-reduced-motion:reduce){.kpi.kpi-ll.pop{animation:none}}
+  @media(prefers-reduced-motion:reduce){.row.hl.ll-row.pop .v{animation:none}}
   .kpi .kv{font-family:"Montserrat",sans-serif;font-weight:800;font-size:clamp(22px,2.2vw,31px);color:var(--gold-light);margin-top:8px;line-height:1;white-space:nowrap}
 
   /* ---------- Conclusion ---------- */
@@ -297,7 +310,7 @@
 <!-- ============ PREMISSAS ============ -->
 <section>
   <div class="wrap">
-    <div class="panel">
+    <div class="panel panel-bare">
       <div class="panel-title">Premissas da operação</div>
       <div class="grid-inputs g4">
         <div class="field wide">
@@ -334,17 +347,15 @@
         <div class="tag">Cenário 1</div>
         <h3>Convencional</h3>
         <div class="sub" style="margin:6px 0 0;font-size:14px">Capital 100% seu. Sem financiamento.</div>
-        <div class="kpis">
-          <div class="kpi"><div class="kl">Capital investido</div><div class="kv" id="c_cap"></div></div>
-          <div class="kpi kpi-ll"><div class="kl">Lucro líquido</div><div class="kv" id="c_ll"></div></div>
-        </div>
         <div class="rows">
           <div class="row"><span class="k">Imóvel (terreno + obra)</span><span class="v" id="c_imovel"></span></div>
-          <div class="row"><span class="k">Venda</span><span class="v" id="c_venda"></span></div>
-          <div class="row neg"><span class="k">Comissão imobiliária</span><span class="v" id="c_comissao"></span></div>
+          <div class="row"><span class="k">Capital investido</span><span class="v" id="c_cap"></span></div>
+          <div class="row"><span class="k">Venda <span class="prem">(margem <input class="pin" type="number" step="1" data-prem="markup" value="40">%)</span></span><span class="v" id="c_venda"></span></div>
+          <div class="row neg"><span class="k">Comissão imobiliária <span class="prem">(<input class="pin" type="number" step="0.5" data-prem="comissao" value="6">%)</span></span><span class="v" id="c_comissao"></span></div>
           <div class="row"><span class="k">Lucro bruto</span><span class="v" id="c_lb"></span></div>
-          <div class="row neg"><span class="k">Imposto</span><span class="v" id="c_imp"></span></div>
-          <div class="row hl"><span class="k">ROI total</span><span class="v roiv"><span id="c_roi"></span><i class="am" id="c_roim"></i></span></div>
+          <div class="row neg"><span class="k">Imposto <span class="prem">(<input class="pin" type="number" step="0.5" data-prem="imposto" value="15">%)</span></span><span class="v" id="c_imp"></span></div>
+          <div class="row"><span class="k">ROI total</span><span class="v roiv"><span id="c_roi"></span><i class="am" id="c_roim"></i></span></div>
+          <div class="row hl ll-row"><span class="k">Lucro líquido</span><span class="v" id="c_ll"></span></div>
         </div>
       </div>
 
@@ -354,19 +365,17 @@
         <div class="tag">Cenário 2</div>
         <h3>Alavancado</h3>
         <div class="sub" style="margin:6px 0 0;font-size:14px">Financia a maior parte. Capital de giro no bolso.</div>
-        <div class="kpis">
-          <div class="kpi"><div class="kl">Capital investido</div><div class="kv" id="a_cap"></div></div>
-          <div class="kpi kpi-ll"><div class="kl">Lucro líquido</div><div class="kv" id="a_ll"></div></div>
-        </div>
         <div class="rows">
           <div class="row"><span class="k">Imóvel (terreno + obra)</span><span class="v" id="a_imovel"></span></div>
-          <div class="row"><span class="k">Financiamento</span><span class="v" id="a_fin"></span></div>
-          <div class="row"><span class="k">Venda</span><span class="v" id="a_venda"></span></div>
-          <div class="row neg"><span class="k">Comissão imobiliária</span><span class="v" id="a_comissao"></span></div>
-          <div class="row neg"><span class="k">Custo do financiamento</span><span class="v" id="a_custo"></span></div>
+          <div class="row"><span class="k">Financiamento <span class="prem">(<input class="pin" type="number" step="5" data-prem="fin" value="80">%)</span></span><span class="v" id="a_fin"></span></div>
+          <div class="row"><span class="k">Capital investido</span><span class="v" id="a_cap"></span></div>
+          <div class="row"><span class="k">Venda <span class="prem">(margem <input class="pin" type="number" step="1" data-prem="markup" value="40">%)</span></span><span class="v" id="a_venda"></span></div>
+          <div class="row neg"><span class="k">Comissão imobiliária <span class="prem">(<input class="pin" type="number" step="0.5" data-prem="comissao" value="6">%)</span></span><span class="v" id="a_comissao"></span></div>
+          <div class="row neg"><span class="k">Custo do financiamento <span class="prem">(<input class="pin" type="number" step="0.5" data-prem="custofin" value="5">%)</span></span><span class="v" id="a_custo"></span></div>
           <div class="row"><span class="k">Lucro bruto</span><span class="v" id="a_lb"></span></div>
-          <div class="row neg"><span class="k">Imposto</span><span class="v" id="a_imp"></span></div>
-          <div class="row hl"><span class="k">ROI total</span><span class="v roiv"><span id="a_roi"></span><i class="am" id="a_roim"></i></span></div>
+          <div class="row neg"><span class="k">Imposto <span class="prem">(<input class="pin" type="number" step="0.5" data-prem="imposto" value="15">%)</span></span><span class="v" id="a_imp"></span></div>
+          <div class="row"><span class="k">ROI total</span><span class="v roiv"><span id="a_roi"></span><i class="am" id="a_roim"></i></span></div>
+          <div class="row hl ll-row"><span class="k">Lucro líquido</span><span class="v" id="a_ll"></span></div>
         </div>
       </div>
     </div>
@@ -416,37 +425,6 @@
         <div class="opp"><span class="n">4</span><span>Pra isso, precisa da <b style="color:var(--gold)">Engrenagem Imobiliária</b> — os 3 pilares alinhados.</span></div>
       </div>
     </div>
-  </div>
-</section>
-
-<!-- ============ PREMISSAS FIXAS ============ -->
-<section>
-  <div class="wrap">
-    <h2>Premissas fixas da operação</h2>
-    <p class="sub">O que não muda de uma operação pra outra fica travado aqui. Em cima você mexe só no que é da praça: terreno, prazo, tamanho da casa e custo do m².</p>
-
-    <div class="fixwrap">
-      <table class="fix">
-        <thead>
-          <tr>
-            <th class="lft">Premissa</th>
-            <th>Valor</th>
-            <th class="lft">Como entra na conta</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr class="calc"><td class="pl">Custo da obra</td><td class="pv" id="t_obra"></td><td class="po">tamanho da casa × custo por m²</td></tr>
-          <tr class="calc"><td class="pl">Custo do imóvel</td><td class="pv" id="t_imovel"></td><td class="po">terreno + obra</td></tr>
-          <tr><td class="pl">Margem sobre o custo</td><td class="pv" id="t_markup"></td><td class="po">markup aplicado pra chegar no preço de venda</td></tr>
-          <tr class="calc"><td class="pl">Valor de venda</td><td class="pv" id="t_venda"></td><td class="po">custo do imóvel + margem</td></tr>
-          <tr><td class="pl">Comissão imobiliária</td><td class="pv" id="t_comissao"></td><td class="po">% sobre o valor de venda</td></tr>
-          <tr><td class="pl">Imposto</td><td class="pv" id="t_imposto"></td><td class="po">% sobre o lucro bruto</td></tr>
-          <tr><td class="pl">Financiado</td><td class="pv" id="t_fin"></td><td class="po">% do imóvel no cenário alavancado</td></tr>
-          <tr><td class="pl">Juros de obra</td><td class="pv" id="t_custofin"></td><td class="po">custo do financiamento, % do imóvel</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="fixnote"><b style="color:var(--white)">Em branco</b> = calculado a partir do quadro de cima. <b style="color:var(--gold-light)">Em dourado</b> = valor fixo.</div>
   </div>
 </section>
 
@@ -557,7 +535,6 @@
   var CAMPOS = ['terreno','tempo','area','rm2'];
   var SAIDAS = ['c_imovel','c_venda','c_comissao','c_lb','c_imp','c_roi','c_roim','c_cap','c_ll',
                 'a_imovel','a_fin','a_venda','a_comissao','a_custo','a_lb','a_imp','a_roi','a_roim','a_cap','a_ll',
-                't_obra','t_imovel','t_venda',
                 'k_cap_c','k_cap_a','k_ll_c','k_ll_a','k_roi_c','k_roi_a','k_roim_c','k_roim_a','mult',
                 'j_total','j_efet','lr_atual','lr_real'];
 
@@ -569,11 +546,7 @@
   function zerar(){
     SAIDAS.forEach(function(id){ $(id).textContent = '—'; });
     ['j_valfin','j_terr','j_obra'].forEach(function(id){ $(id).value = ''; });
-    $('t_markup').textContent   = PCT(FIX.markup);
-    $('t_comissao').textContent = PCT(FIX.comissao);
-    $('t_imposto').textContent  = PCT(FIX.imposto);
-    $('t_fin').textContent      = PCT(FIX.fin);
-    $('t_custofin').textContent = PCT2(FIX.custofin);
+    sincronizarPremissas();
     $('rec').innerHTML = '';
     $('congrats').classList.remove('on');
     $('card-conv').classList.remove('win');
@@ -582,6 +555,16 @@
     explodiu = false;
     calcJuros(0, 0, 0, false);
     atualizarBarra();
+  }
+
+  // as premissas aparecem nos dois cards -> mantém os campos espelhados
+  function sincronizarPremissas(){
+    var ins = document.querySelectorAll('input.pin');
+    for(var i=0;i<ins.length;i++){
+      if(ins[i] === document.activeElement) continue;
+      var k = ins[i].getAttribute('data-prem');
+      ins[i].value = Math.round(FIX[k]*10000)/100;
+    }
   }
 
   // a conta só roda depois de clicar em Calcular
@@ -606,14 +589,14 @@
   var explodiu = false;
 
   function marcarLucro(on){
-    var bxs = document.querySelectorAll('.kpi-ll');
+    var bxs = document.querySelectorAll('.ll-row');
     for(var i=0;i<bxs.length;i++){ bxs[i].classList.toggle('profit', on); }
   }
 
   function comemorar(){
     if(explodiu) return;
     explodiu = true;
-    var bxs = document.querySelectorAll('.kpi-ll');
+    var bxs = document.querySelectorAll('.ll-row');
     for(var i=0;i<bxs.length;i++){
       (function(b){ b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); })(bxs[i]);
     }
@@ -622,7 +605,7 @@
 
   function explodir(){
     if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    var alvos = document.querySelectorAll('.kpi-ll');
+    var alvos = document.querySelectorAll('.ll-row');
     if(!alvos.length) return;
 
     var cv = document.createElement('canvas');
@@ -637,7 +620,8 @@
     var cores = ['#12d36b','#12d36b','#cc8f4e','#dfbd69','#ffffff'];
     var ps = [];
     for(var a=0;a<alvos.length;a++){
-      var r = alvos[a].getBoundingClientRect();
+      var alvo = alvos[a].querySelector('.v') || alvos[a];
+      var r = alvo.getBoundingClientRect();
       var cx = r.left + r.width/2, cy = r.top + r.height/2;
       for(var i=0;i<48;i++){
         var ang = Math.random()*Math.PI*2, sp = 2 + Math.random()*7;
@@ -693,15 +677,7 @@
     var venda  = imovel*(1+FIX.markup);
     LAST.imovel = imovel;
 
-    // ---- tabela de premissas fixas ----
-    $('t_obra').textContent     = BRL(obra);
-    $('t_imovel').textContent   = BRL(imovel);
-    $('t_markup').textContent   = PCT(FIX.markup);
-    $('t_venda').textContent    = BRL(venda);
-    $('t_comissao').textContent = PCT(comPct);
-    $('t_imposto').textContent  = PCT(impPct);
-    $('t_fin').textContent      = PCT(finPct);
-    $('t_custofin').textContent = PCT2(custoFinPct);
+    sincronizarPremissas();
 
     var comissao = venda*comPct;
 
@@ -851,6 +827,7 @@
   $('useReal').addEventListener('click', function(){
     if(LAST.imovel>0 && window._lastJurosTotal){
       FIX.custofin = window._lastJurosTotal/LAST.imovel;
+      sincronizarPremissas();
       calc();
     }
   });
@@ -862,6 +839,18 @@
   });
   $('j_anual').addEventListener('input', calc);
   $('calcBtn').addEventListener('click', calcular);
+
+  // premissas editáveis dentro dos cards
+  var pins = document.querySelectorAll('input.pin');
+  for(var pi=0; pi<pins.length; pi++){
+    pins[pi].addEventListener('input', function(){
+      var v = parseFloat(this.value);
+      if(isNaN(v) || v < 0) return;
+      FIX[this.getAttribute('data-prem')] = v/100;
+      sincronizarPremissas();
+      calc();
+    });
+  }
 
   calc();
 </script>
